@@ -1,136 +1,154 @@
 <template>
-  <div class="question-box-container">
-    <b-jumbotron>
-      <template slot="lead">
-        {{ currentQuestion.question }}
-      </template>
+    <div class="question-box-jumbotron">
+        <b-jumbotron  lead="Bootstrap v4 Components for Vue.js 2">
+           
+            <template v-slot:lead>
+                <span v-html = 'curQuestion.question'> </span>  <!-- Treat the question text as html, since it is html-encoded -->
+            </template>
 
-      <hr class="my-4" />
+            <hr class="my-4">
 
-      <b-list-group>
-        <b-list-group-item
-          v-for="(answer, index) in shuffledAnswers"
-          :key="index"
-          @click.prevent="selectAnswer(index)"
-          :class="answerClass(index)"
-        >
-          {{ answer }}
-        </b-list-group-item>
-      </b-list-group>
+            <b-list-group>
+                <!-- Use the index i in the loop as the key that will be injected into DOM for each element -->
+                <!-- When elem is clicked, this key i will be passed to chooseAnswer -->
+                <b-list-group-item 
+                    v-for="(answer, i) in answers" :key="i" 
+                    @click="chooseAnswer(i)"
+                    :class = "getAnswerClass(i)">
+                    <span v-html="`${i+1}. ${answer}`"></span>
 
-      <b-button
-        variant="primary"
-        @click="submitAnswer"
-        :disabled="selectedIndex === null || answered"
-      >
-        Submit
-      </b-button>
-      <b-button @click="next" variant="success">
-        Next
-      </b-button>
-    </b-jumbotron>
-  </div>
+                </b-list-group-item>
+            </b-list-group>
+           
+
+            <b-button variant="primary" @click="submitAnswer"
+              :disabled = "curSelected < 0 || answered">
+                Submit
+             </b-button>
+
+            <b-button variant="success" 
+            @click="next">
+                Next
+            </b-button>
+
+        </b-jumbotron>
+    </div>
 </template>
 
+
+
 <script>
-import _ from 'lodash'
+
+import * as _ from 'lodash';
 
 export default {
-  props: {
-    currentQuestion: Object,
-    next: Function,
-    increment: Function
-  },
-  data: function() {
-    return {
-      selectedIndex: null,
-      correctIndex: null,
-      shuffledAnswers: [],
-      answered: false
-    }
-  },
-  computed: {
-    answers() {
-      // this function is no longer used in finished code
-      // it is replaced by the watch function below and the
-      // shuffleAnswers method
-      let answers = [...this.currentQuestion.incorrect_answers]
-      answers.push(this.currentQuestion.correct_answer)
-      return answers
-    }
-  },
-  watch: {
-    currentQuestion: {
-      immediate: true,
-      handler() {
-        this.selectedIndex = null
-        this.answered = false
-        this.shuffleAnswers()
-      }
-    }
-  },
-  methods: {
-    selectAnswer(index) {
-      this.selectedIndex = index
+    props: {
+        curQuestion: Object,
+        next: Function,
+        increment: Function
     },
-    submitAnswer() {
-      let isCorrect = false
 
-      if (this.selectedIndex === this.correctIndex) {
-        isCorrect = true
-      }
-      this.answered = true
-
-      this.increment(isCorrect)
+    data: function() {
+        return {
+            answers: [],
+            curSelected: -1,
+            correctIndex: -1,
+            answered : false
+        };
     },
-    shuffleAnswers() {
-      let answers = [...this.currentQuestion.incorrect_answers, this.currentQuestion.correct_answer]
-      this.shuffledAnswers = _.shuffle(answers)
-      this.correctIndex = this.shuffledAnswers.indexOf(this.currentQuestion.correct_answer)
+    
+    watch: {
+        /*Run the watch handler whenever value of curQuestion changes, and immediately as well */
+        curQuestion: {
+            immediate: true,
+            handler: function(/*oldQuestion, newQuestion*/) {
+                         console.log('cur question changed!');
+                        this.curSelected = -1;
+                        this.answered = false;
+                        this.correctIndex = -1;
+                        this.shuffleAnswers();
+            }
+        }
     },
-    answerClass(index) {
-      let answerClass = ''
 
-      if (!this.answered && this.selectedIndex === index) {
-        answerClass = 'selected'
-      } else if (this.answered && this.correctIndex === index) {
-        answerClass = 'correct'
-      } else if (this.answered &&
-        this.selectedIndex === index &&
-        this.correctIndex !== index
-      ) {
-        answerClass = 'incorrect'
-      }
+    methods: {
+        chooseAnswer(selected) {
+            this.curSelected = selected;
+        },
 
-      return answerClass
+        shuffleAnswers() {
+            let answers = [...this.curQuestion.incorrect_answers, this.curQuestion.correct_answer];
+            this.answers = _.shuffle(answers);            //Use lodash to shuffle array
+            // eslint-disable-next-line vue/no-side-effects-in-computed-properties
+            this.correctIndex = answers.indexOf(this.curQuestion.correct_answer);
+            this.answers = answers;
+        },
+
+        submitAnswer() {
+            this.answered = true;
+            this.increment(this.curSelected === this.correctIndex);            
+        },
+
+        getAnswerClass(index) {
+        
+            if (index === null || index < 0)
+                return '';
+            
+            if (this.answered === false && this.curSelected === index) 
+                return 'selected';
+            
+                        
+            if (this.answered === true) {
+                if (this.curSelected === index) {
+                    /*Correct answer selected */
+                    if(this.curSelected === this.correctIndex ) 
+                        return 'correct';
+                    
+                    /*Wrong answer selected */
+                    return 'incorrect';
+                }
+                else if (this.curSelected !== this.correctIndex && this.correctIndex == index)
+                    return 'correct';
+            }
+        }
     }
-  }
+
 }
+    
+
 </script>
 
+
+
 <style scoped>
-.list-group {
-  margin-bottom: 15px;
-}
+    
+    .list-group {
+        margin-bottom: 2rem;
+    }
 
-.list-group-item:hover {
-  background: #EEE;
-  cursor: pointer;
-}
+    .list-group-item {
+        margin-bottom: 20px;
+    }
 
-.btn {
-  margin: 0 5px;
-}
+    .list-group-item:hover {
+        cursor: crosshair;
+        background-color: darkgrey;
+        color: aliceblue
+    }
 
-.selected {
-  background-color: lightblue;
-}
+    .list-group-item.selected {
+        background-color:darkcyan
+    }
 
-.correct {
-  background-color: lightgreen;
-}
+    .list-group-item.incorrect {
+        background-color: red;
+    }
 
-.incorrect {
-  background-color: red;
-}
+    .list-group-item.correct {
+         background-color: green;
+    }
+    
+
+
+
 </style>

@@ -1,71 +1,68 @@
 <template>
   <div id="app">
-    <Header
-      :numCorrect="numCorrect"
-      :numTotal="numTotal"
-    />
+    <HeaderThing :numCorrect = "numCorrect" :numTotal = "totalAnswered" />
 
     <b-container class="bv-example-row">
-      <b-row>
-        <b-col sm="6" offset="3">
-          <QuestionBox
-            v-if="questions.length"
-            :currentQuestion="questions[index]"
-            :next="next"
-            :increment="increment"
-          />
-        </b-col>
-      </b-row>
+        <b-row>
+            <b-col sm="6" offset="3">
+              <!-- Don't try access questions array and render this component until questions are available --> 
+              <QuestionBox v-if = 'questions.length > 0' 
+                :curQuestion = 'questions[index]' 
+                :next = 'next'
+                :increment = 'updateScore'/>
+            </b-col>    <!--There are a total of 12 vertical columns -->
+        </b-row>
     </b-container>
   </div>
 </template>
 
 <script>
-import Header from './components/Header.vue'
-import QuestionBox from './components/QuestionBox.vue'
+import HeaderThing from './components/HeaderThing'
+import QuestionBox from './components/QuestionBox'
 
 export default {
-  name: 'app',
+  name: 'App',
   components: {
-    Header,
+    HeaderThing,
     QuestionBox
   },
-  data() {
+  data: function() {
     return {
       questions: [],
       index: 0,
-      numCorrect: 0,
-      numTotal: 0
-    }
+      totalAnswered: 0,
+      numCorrect: 0
+    };
   },
   methods: {
     next() {
-      this.index++
+      this.index++;
     },
-    increment(isCorrect) {
-      if (isCorrect) {
-        this.numCorrect++
+
+    updateScore(isCorrect) {
+      if (isCorrect === true) {
+        this.numCorrect++;
       }
-      this.numTotal++
+      this.totalAnswered++;
     }
   },
+
+
   mounted: function() {
-    fetch('https://opentdb.com/api.php?amount=10&category=27&type=multiple', {
-      method: 'get'
-    })
-      .then((response) => {
-        return response.json()
-      })
-      .then((jsonData) => {
-        this.questions = jsonData.results
-      })
+    fetch('https://opentdb.com/api.php?amount=10&category=18&type=multiple', {method: 'get'}).then(res => {
+      console.log(res.statusText);
+      return res.json();
+    }).then(theJSON => {
+      console.log(theJSON.results);
+      this.questions = theJSON.results;
+    });
   }
 }
 </script>
 
 <style>
 #app {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
+  font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
